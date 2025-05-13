@@ -1,5 +1,6 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
+from django.contrib.auth.forms import UserCreationForm
 
 from .constants import POSTS_PER_PAGE
 from .models import Category, Post
@@ -101,7 +102,6 @@ def category_posts(request, category_slug):
         {'category': category, 'post_list': post_list}
     )
 
-from django.shortcuts import render
 
 def csrf_failure(request, reason=''):
     """
@@ -153,3 +153,14 @@ def server_error(request):
         HttpResponse: HTML-страница 500.html с кодом статуса 500.
     """
     return render(request, 'pages/500.html', status=500)
+
+def registration(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/registration_form.html', {'form': form})
+
