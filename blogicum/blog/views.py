@@ -100,3 +100,56 @@ def category_posts(request, category_slug):
         'blog/category.html',
         {'category': category, 'post_list': post_list}
     )
+
+from django.shortcuts import render
+
+def csrf_failure(request, reason=''):
+    """
+    Обрабатывает ошибку CSRF-токена (403 Forbidden).
+
+    Отображает кастомную страницу для случаев:
+    - Недействительного CSRF-токена
+    - Отсутствия CSRF-токена в запросе
+
+    Аргументы:
+        request (HttpRequest): Объект запроса.
+        reason (str): Причина ошибки (опционально).
+
+    Возвращает:
+        HttpResponse: HTML-страница 403csrf.html с кодом статуса 403.
+    """
+    return render(request, 'pages/403csrf.html', status=403)
+
+def page_not_found(request, exception):
+    """
+    Обрабатывает ошибку "Страница не найдена" (404 Not Found).
+
+    Отображает кастомную страницу для случаев:
+    - Несуществующих URL
+    - Доступа к неопубликованным ресурсам
+
+    Аргументы:
+        request (HttpRequest): Объект запроса.
+        exception (Exception): Исключение, вызвавшее ошибку.
+
+    Возвращает:
+        HttpResponse: HTML-страница 404.html с кодом статуса 404.
+    """
+    return render(request, 'pages/404.html', status=404)
+
+
+def server_error(request):
+    """
+    Обрабатывает внутренние ошибки сервера (500 Internal Server Error).
+
+    Отображает кастомную страницу при:
+    - Необработанных исключениях
+    - Критических ошибках в коде
+
+    Аргументы:
+        request (HttpRequest): Объект запроса.
+
+    Возвращает:
+        HttpResponse: HTML-страница 500.html с кодом статуса 500.
+    """
+    return render(request, 'pages/500.html', status=500)
