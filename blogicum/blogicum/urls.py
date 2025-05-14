@@ -12,4 +12,5 @@ urlpatterns = [
     path('', include('blog.urls')),
     path('auth/', include('django.contrib.auth.urls')),
     path('auth/registration/', views.registration, name='registration'),
+    path('profile/', include('users.urls')),
 ]
