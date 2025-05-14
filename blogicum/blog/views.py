@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib.auth.forms import UserCreationForm
+from django.core.paginator import Paginator
 
 from .constants import POSTS_PER_PAGE
 from .models import Category, Post
@@ -43,8 +44,11 @@ def index(request):
     Возвращает:
         HttpResponse: HTML-страница с последними постами.
     """
-    post_list = get_published_posts().order_by('-pub_date')[:POSTS_PER_PAGE]
-    return render(request, 'blog/index.html', {'post_list': post_list})
+    post_list = get_published_posts().order_by('-pub_date')
+    paginator = Paginator(post_list, POSTS_PER_PAGE)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'blog/index.html', {'page_obj': page_obj})
 
 
 def post_detail(request, post_id):
@@ -96,10 +100,15 @@ def category_posts(request, category_slug):
     post_list = get_published_posts().filter(
         category=category
     ).order_by('-pub_date')
+
+    paginator = Paginator(post_list, POSTS_PER_PAGE)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(
         request,
         'blog/category.html',
-        {'category': category, 'post_list': post_list}
+        {'category': category, 'page_obj': page_obj}
     )
 
 
