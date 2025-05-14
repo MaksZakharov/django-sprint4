@@ -10,9 +10,12 @@ User = get_user_model()
 def profile(request, username):
     user = get_object_or_404(User, username=username)
     posts = Post.objects.filter(author=user).order_by('-pub_date')
+    paginator = Paginator(posts, POSTS_PER_PAGE)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     return render(request, 'users/profile.html', {
         'profile_user': user,
-        'posts': posts,
+        'page_obj': page_obj,
     })
 
 @login_required
