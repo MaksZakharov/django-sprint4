@@ -2,9 +2,11 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib.auth.forms import UserCreationForm
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
 
 from .constants import POSTS_PER_PAGE
 from .models import Category, Post
+from .forms import PostForm
 
 
 def get_published_posts():
@@ -173,3 +175,15 @@ def registration(request):
         form = UserCreationForm()
     return render(request, 'registration/registration_form.html', {'form': form})
 
+@login_required
+def create_post(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.save()
+            return redirect('users:profile', username=request.user.username)
+    else:
+        form = PostForm()
+    return render(request, 'blog/create.html', {'form': form})
