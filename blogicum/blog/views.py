@@ -75,11 +75,15 @@ def post_detail(request, post_id):
         HttpResponse: HTML-страница с подробным содержанием поста.
         Http404: Если пост не найден или не соответствует условиям.
     """
-    post = get_object_or_404(
-        get_published_posts(),
-        id=post_id
-    )
-    return render(request, 'blog/detail.html', {'post': post})
+def post_detail(request, post_id):
+    post = get_object_or_404(get_published_posts(), id=post_id)
+    form = CommentForm()  # ← создаём пустую форму
+    comments = post.comments.all()  # ← если хочешь отдельно использовать
+    return render(request, 'blog/detail.html', {
+        'post': post,
+        'form': form,  # ← обязательно передаём форму в шаблон
+        'comments': comments,
+    })    
 
 
 def category_posts(request, category_slug):
