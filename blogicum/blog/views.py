@@ -7,10 +7,11 @@ from django.contrib.auth.forms import UserCreationForm
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.views.generic import DeleteView
+from django.views.decorators.http import require_POST
 
 from .constants import POSTS_PER_PAGE
-from .models import Category, Post
-from .forms import PostForm
+from .models import Category, Post, Comment
+from .forms import PostForm, CommentForm
 
 
 def get_published_posts():
@@ -210,3 +211,15 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         return self.request.user == self.get_object().author
+
+@require_POST
+@login_required
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+    return redirect('blog:post_detail', post_id=post_id)
