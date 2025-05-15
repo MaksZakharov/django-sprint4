@@ -1,8 +1,12 @@
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.views.generic.edit import UpdateView
+from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib.auth.forms import UserCreationForm
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
+from django.views.generic import DeleteView
 
 from .constants import POSTS_PER_PAGE
 from .models import Category, Post
@@ -187,3 +191,22 @@ def create_post(request):
     else:
         form = PostForm()
     return render(request, 'blog/create.html', {'form': form})
+
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+
+    def get_success_url(self):
+        return reverse_lazy('blog:post_detail', kwargs={'post_id': self.object.pk})
+
+    def test_func(self):
+        return self.request.user == self.get_object().author
+
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Post
+    template_name = 'blog/create.html'
+    success_url = reverse_lazy('blog:index')
+
+    def test_func(self):
+        return self.request.user == self.get_object().author
