@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.views.generic import DeleteView
 from django.views.decorators.http import require_POST
+from django.core.exceptions import PermissionDenied
 
 from .constants import POSTS_PER_PAGE
 from .models import Category, Post, Comment
@@ -227,3 +228,29 @@ def add_comment(request, post_id):
         comment.post = post
         comment.save()
     return redirect('blog:post_detail', post_id=post_id)
+
+class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/comment.html'
+
+    def get_success_url(self):
+        return reverse_lazy('blog:post_detail', kwargs={'post_id': self.object.post.id})
+
+    def test_func(self):
+        return self.request.user == self.get_object().author
+
+@login_required
+def delete_comment(request, post_id, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, post__id=post_id)
+    if request.user != comment.author:
+        raise PermissionDenied  # Запретить удаление чужих комментариев
+
+    if request.method == 'POST':
+        comment.delete()
+        return redirect('blog:post_detail', post_id=post_id)
+
+    return render(request, 'blog/comment.html', {
+        'comment': comment,
+        'post': comment.post
+    })
