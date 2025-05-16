@@ -96,6 +96,7 @@ class Post(PublishedModel):
     def __str__(self):
         return self.title[:30]
 
+
 class Comment(models.Model):
     post = models.ForeignKey(
         'Post',

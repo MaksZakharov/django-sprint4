@@ -1,35 +1,32 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic.edit import UpdateView
-from django.urls import reverse_lazy
-from django.shortcuts import get_object_or_404, render, redirect
-from django.utils import timezone
-from django.contrib.auth.forms import UserCreationForm
-from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
-from django.views.generic import DeleteView
-from django.views.decorators.http import require_POST
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.views.generic import DeleteView
+from django.views.generic.edit import UpdateView
 
 from .constants import POSTS_PER_PAGE
-from .models import Category, Post, Comment
-from .forms import PostForm, CommentForm
+from .forms import CommentForm, PostForm
+from .models import Category, Comment, Post
 
 
 def get_published_posts():
     """
-    Возвращает базовый queryset для опубликованных постов.
+    Возвращает базовый QuerySet опубликованных постов.
 
-    Фильтрует посты, удовлетворяющие следующим условиям:
-    - is_published=True
-    - pub_date не позже текущего времени
-    - категория is_published=True
+    Фильтрует только опубликованные посты с датой публикации
+    не позже текущей и опубликованной категорией.
 
     Возвращает:
-        QuerySet: Отфильтрованные посты, удовлетворяющие указанным условиям.
+        QuerySet: Список подходящих постов.
     """
     return Post.objects.select_related(
-        'category', 'location', 'author'
-    ).filter(
+        "category", "location", "author").filter(
         is_published=True,
         pub_date__lte=timezone.now(),
         category__is_published=True
@@ -38,188 +35,207 @@ def get_published_posts():
 
 def index(request):
     """
-    Отображает главную страницу блога.
-
-    Возвращает список из 5 последних опубликованных постов,
-    у которых:
-    - is_published=True,
-    - pub_date не позже текущего времени,
-    - категория также опубликована.
+    Отображает главную страницу со списком постов.
 
     Аргументы:
-        request (HttpRequest): Объект запроса.
+        request (HttpRequest): Текущий запрос.
 
     Возвращает:
-        HttpResponse: HTML-страница с последними постами.
+        HttpResponse: Список постов с пагинацией.
     """
-    post_list = get_published_posts().order_by('-pub_date')
+    post_list = get_published_posts().order_by("-pub_date")
     paginator = Paginator(post_list, POSTS_PER_PAGE)
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    return render(request, 'blog/index.html', {'page_obj': page_obj})
+    return render(request, "blog/index.html", {"page_obj": page_obj})
 
 
 def post_detail(request, post_id):
     """
-    Отображает страницу с подробной информацией о посте.
-
-    Пост должен соответствовать условиям:
-    - is_published=True,
-    - pub_date не позже текущего времени,
-    - категория также опубликована.
+    Отображает страницу с подробностями поста.
 
     Аргументы:
-        request (HttpRequest): Объект запроса.
-        post_id (int): Идентификатор поста.
+        request (HttpRequest): Текущий запрос.
+        post_id (int): ID поста.
 
     Возвращает:
-        HttpResponse: HTML-страница с подробным содержанием поста.
-        Http404: Если пост не найден или не соответствует условиям.
+        HttpResponse: Страница поста с комментариями и формой.
     """
-def post_detail(request, post_id):
     post = get_object_or_404(get_published_posts(), id=post_id)
-    form = CommentForm()  # ← создаём пустую форму
-    comments = post.comments.all()  # ← если хочешь отдельно использовать
-    return render(request, 'blog/detail.html', {
-        'post': post,
-        'form': form,  # ← обязательно передаём форму в шаблон
-        'comments': comments,
-    })    
+    form = CommentForm()
+    comments = post.comments.all()
+    return render(
+        request,
+        "blog/detail.html",
+        {
+            "post": post,
+            "form": form,
+            "comments": comments,
+        },
+    )
 
 
 def category_posts(request, category_slug):
     """
-    Отображает страницу постов в выбранной категории.
-
-    Отображаются только опубликованные посты и категория, если:
-    - категория is_published=True,
-    - пост is_published=True,
-    - pub_date не позже текущего времени.
+    Отображает страницу постов по категории.
 
     Аргументы:
-        request (HttpRequest): Объект запроса.
+        request (HttpRequest): Текущий запрос.
         category_slug (str): Слаг категории.
 
     Возвращает:
-        HttpResponse: HTML-страница с постами из категории.
-        Http404: Если категория не найдена или не опубликована.
+        HttpResponse: Страница с постами данной категории.
     """
     category = get_object_or_404(
         Category,
         slug=category_slug,
         is_published=True
     )
-    post_list = get_published_posts().filter(
-        category=category
-    ).order_by('-pub_date')
-
+    post_list = (
+        get_published_posts()
+        .filter(category=category).
+        order_by("-pub_date")
+    )
     paginator = Paginator(post_list, POSTS_PER_PAGE)
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-
     return render(
         request,
-        'blog/category.html',
-        {'category': category, 'page_obj': page_obj}
+        "blog/category.html",
+        {"category": category, "page_obj": page_obj}
     )
 
 
-def csrf_failure(request, reason=''):
+def csrf_failure(request, reason=""):
     """
-    Обрабатывает ошибку CSRF-токена (403 Forbidden).
-
-    Отображает кастомную страницу для случаев:
-    - Недействительного CSRF-токена
-    - Отсутствия CSRF-токена в запросе
+    Обработка ошибки CSRF (403).
 
     Аргументы:
-        request (HttpRequest): Объект запроса.
-        reason (str): Причина ошибки (опционально).
+        request (HttpRequest): Текущий запрос.
+        reason (str): Причина ошибки.
 
     Возвращает:
-        HttpResponse: HTML-страница 403csrf.html с кодом статуса 403.
+        HttpResponse: Кастомная страница ошибки.
     """
-    return render(request, 'pages/403csrf.html', status=403)
+    return render(request, "pages/403csrf.html", status=403)
+
 
 def page_not_found(request, exception):
     """
-    Обрабатывает ошибку "Страница не найдена" (404 Not Found).
-
-    Отображает кастомную страницу для случаев:
-    - Несуществующих URL
-    - Доступа к неопубликованным ресурсам
+    Обработка ошибки 404.
 
     Аргументы:
-        request (HttpRequest): Объект запроса.
-        exception (Exception): Исключение, вызвавшее ошибку.
+        request (HttpRequest): Текущий запрос.
+        exception (Exception): Объект исключения.
 
     Возвращает:
-        HttpResponse: HTML-страница 404.html с кодом статуса 404.
+        HttpResponse: Кастомная страница 404.
     """
-    return render(request, 'pages/404.html', status=404)
+    return render(request, "pages/404.html", status=404)
 
 
 def server_error(request):
     """
-    Обрабатывает внутренние ошибки сервера (500 Internal Server Error).
-
-    Отображает кастомную страницу при:
-    - Необработанных исключениях
-    - Критических ошибках в коде
+    Обработка ошибки 500.
 
     Аргументы:
-        request (HttpRequest): Объект запроса.
+        request (HttpRequest): Текущий запрос.
 
     Возвращает:
-        HttpResponse: HTML-страница 500.html с кодом статуса 500.
+        HttpResponse: Кастомная страница 500.
     """
-    return render(request, 'pages/500.html', status=500)
+    return render(request, "pages/500.html", status=500)
+
 
 def registration(request):
-    if request.method == 'POST':
+    """
+    Регистрация нового пользователя.
+
+    Аргументы:
+        request (HttpRequest): Текущий запрос.
+
+    Возвращает:
+        HttpResponse: Страница с формой регистрации.
+    """
+    if request.method == "POST":
         form = UserCreationForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('login')
+            return redirect("login")
     else:
         form = UserCreationForm()
-    return render(request, 'registration/registration_form.html', {'form': form})
+    return render(
+        request,
+        "registration/registration_form.html",
+        {"form": form}
+    )
+
 
 @login_required
 def create_post(request):
-    if request.method == 'POST':
+    """
+    Создание нового поста авторизованным пользователем.
+
+    Аргументы:
+        request (HttpRequest): Текущий запрос.
+
+    Возвращает:
+        HttpResponse: Страница с формой создания поста или редирект.
+    """
+    if request.method == "POST":
         form = PostForm(request.POST, request.FILES)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-            return redirect('users:profile', username=request.user.username)
+            return redirect("users:profile", username=request.user.username)
     else:
         form = PostForm()
-    return render(request, 'blog/create.html', {'form': form})
+    return render(request, "blog/create.html", {"form": form})
+
 
 class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+
     model = Post
     form_class = PostForm
-    template_name = 'blog/create.html'
+    template_name = "blog/create.html"
 
     def get_success_url(self):
-        return reverse_lazy('blog:post_detail', kwargs={'post_id': self.object.pk})
+
+        return reverse_lazy(
+            "blog:post_detail",
+            kwargs={"post_id": self.object.pk}
+        )
 
     def test_func(self):
+
         return self.request.user == self.get_object().author
+
 
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+
     model = Post
-    template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:index')
+    template_name = "blog/create.html"
+    success_url = reverse_lazy("blog:index")
 
     def test_func(self):
+
         return self.request.user == self.get_object().author
+
 
 @require_POST
 @login_required
 def add_comment(request, post_id):
+    """
+    Добавление комментария к посту.
+
+    Аргументы:
+        request (HttpRequest): Текущий запрос.
+        post_id (int): ID поста.
+
+    Возвращает:
+        HttpResponse: Редирект на страницу поста.
+    """
     post = get_object_or_404(Post, id=post_id)
     form = CommentForm(request.POST)
     if form.is_valid():
@@ -227,30 +243,51 @@ def add_comment(request, post_id):
         comment.author = request.user
         comment.post = post
         comment.save()
-    return redirect('blog:post_detail', post_id=post_id)
+    return redirect("blog:post_detail", post_id=post_id)
+
 
 class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+
     model = Comment
     form_class = CommentForm
-    template_name = 'blog/comment.html'
+    template_name = "blog/comment.html"
 
     def get_success_url(self):
-        return reverse_lazy('blog:post_detail', kwargs={'post_id': self.object.post.id})
+
+        return reverse_lazy(
+            "blog:post_detail",
+            kwargs={"post_id": self.object.post.id}
+        )
 
     def test_func(self):
+
         return self.request.user == self.get_object().author
+
 
 @login_required
 def delete_comment(request, post_id, comment_id):
+    """
+    Удаление комментария (только автор).
+
+    Аргументы:
+        request (HttpRequest): Текущий запрос.
+        post_id (int): ID поста.
+        comment_id (int): ID комментария.
+
+    Возвращает:
+        HttpResponse: Подтверждение удаления или редирект.
+    """
     comment = get_object_or_404(Comment, id=comment_id, post__id=post_id)
     if request.user != comment.author:
-        raise PermissionDenied  # Запретить удаление чужих комментариев
+        raise PermissionDenied
 
-    if request.method == 'POST':
+    if request.method == "POST":
         comment.delete()
-        return redirect('blog:post_detail', post_id=post_id)
+        return redirect("blog:post_detail", post_id=post_id)
 
-    return render(request, 'blog/comment.html', {
-        'comment': comment,
-        'post': comment.post
-    })
+    return render(
+        request,
+        "blog/comment.html",
+        {"comment": comment,
+         "post": comment.post}
+    )
