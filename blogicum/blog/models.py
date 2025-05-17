@@ -108,7 +108,8 @@ class Comment(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        verbose_name='Автор'
+        verbose_name='Автор',
+        related_name='comments'
     )
     text = models.TextField('Комментарий')
     created_at = models.DateTimeField(
