@@ -95,7 +95,7 @@ class Post(PublishedModel):
         default_related_name = 'posts'
 
     def __str__(self):
-        return self.title[:30]
+        return self.title[:TITLE_PREVIEW_LENGTH]
 
 
 class Comment(models.Model):
