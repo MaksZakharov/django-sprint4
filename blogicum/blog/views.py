@@ -155,7 +155,7 @@ def create_post(request):
     return render(request, "blog/create.html", {"form": form})
 
 
-class PostUpdateView(UpdateView):
+class PostUpdateView(LoginRequiredMixin, UpdateView):
 
     model = Post
     form_class = PostForm
