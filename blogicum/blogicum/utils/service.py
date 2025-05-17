@@ -32,7 +32,8 @@ def get_published_posts():
         QuerySet: Список подходящих постов.
     """
     return Post.objects.select_related(
-        "category", "location", "author").filter(
+        "category", "location", "author"
+    ).filter(
         is_published=True,
         pub_date__lte=timezone.now(),
         category__is_published=True
