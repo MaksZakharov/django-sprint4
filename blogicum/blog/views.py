@@ -9,6 +9,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import DeleteView
 from django.views.generic.edit import UpdateView
+from django.views.decorators.csrf import requires_csrf_token
+from django.db.models import Count
 
 from .constants import POSTS_PER_PAGE
 from .forms import CommentForm, PostForm
@@ -43,7 +45,9 @@ def index(request):
     Возвращает:
         HttpResponse: Список постов с пагинацией.
     """
-    post_list = get_published_posts().order_by("-pub_date")
+    post_list = get_published_posts().annotate(
+    comment_count=Count('comments')
+    ).order_by("-pub_date")
     paginator = Paginator(post_list, POSTS_PER_PAGE)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -106,46 +110,9 @@ def category_posts(request, category_slug):
     )
 
 
+@requires_csrf_token
 def csrf_failure(request, reason=""):
-    """
-    Обработка ошибки CSRF (403).
-
-    Аргументы:
-        request (HttpRequest): Текущий запрос.
-        reason (str): Причина ошибки.
-
-    Возвращает:
-        HttpResponse: Кастомная страница ошибки.
-    """
     return render(request, "pages/403csrf.html", status=403)
-
-
-def page_not_found(request, exception):
-    """
-    Обработка ошибки 404.
-
-    Аргументы:
-        request (HttpRequest): Текущий запрос.
-        exception (Exception): Объект исключения.
-
-    Возвращает:
-        HttpResponse: Кастомная страница 404.
-    """
-    return render(request, "pages/404.html", status=404)
-
-
-def server_error(request):
-    """
-    Обработка ошибки 500.
-
-    Аргументы:
-        request (HttpRequest): Текущий запрос.
-
-    Возвращает:
-        HttpResponse: Кастомная страница 500.
-    """
-    return render(request, "pages/500.html", status=500)
-
 
 def registration(request):
     """
@@ -199,6 +166,7 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = "blog/create.html"
+    pk_url_kwarg = "post_id"
 
     def get_success_url(self):
 
@@ -285,9 +253,7 @@ def delete_comment(request, post_id, comment_id):
         comment.delete()
         return redirect("blog:post_detail", post_id=post_id)
 
-    return render(
-        request,
-        "blog/comment.html",
-        {"comment": comment,
-         "post": comment.post}
-    )
+    return render(request, "blog/comment.html", {
+        "comment": comment,
+        "post": comment.post,
+    })
