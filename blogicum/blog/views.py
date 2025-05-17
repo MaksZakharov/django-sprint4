@@ -60,7 +60,7 @@ def post_detail(request, post_id):
             raise Http404()
 
     form = CommentForm()
-    comments = post.comments.all()
+    comments = post.comments.select_related('author').all()
     return render(
         request,
         "blog/detail.html",
