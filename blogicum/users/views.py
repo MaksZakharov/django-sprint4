@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from blog.constants import POSTS_PER_PAGE
 from blog.models import Post
+from .service import paginate_queryset
 
 User = get_user_model()
 
@@ -36,9 +37,7 @@ def profile(request, username):
 
     posts = posts.annotate(comment_count=Count('comments')).order_by('-pub_date')
 
-    paginator = Paginator(posts, POSTS_PER_PAGE)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginate_queryset(request, posts, POSTS_PER_PAGE)
 
     return render(request, 'users/profile.html', {
         'profile_user': user,
