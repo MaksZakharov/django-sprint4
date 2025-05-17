@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.decorators.csrf import requires_csrf_token
 from django.views.decorators.http import require_POST
@@ -163,7 +163,7 @@ class PostUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
     pk_url_kwarg = "post_id"
 
     def get_success_url(self):
-        return reverse_lazy(
+        return reverse(
             "blog:post_detail",
             kwargs={"post_id": self.object.pk}
         )
@@ -177,8 +177,12 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy("blog:index")
 
     def test_func(self):
-
         return self.request.user == self.get_object().author
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = PostForm(instance=self.get_object())
+        return context
 
 
 @require_POST
@@ -221,7 +225,7 @@ class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return self.request.user == self.get_object().author
 
     def handle_no_permission(self):
-        raise Http404()
+        return redirect("blog:post_detail", post_id=self.get_object().post.id)
 
 
 class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
