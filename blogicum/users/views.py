@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserChangeForm
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Count
+from django.utils import timezone
 
 from blog.constants import POSTS_PER_PAGE
 from blog.models import Post
@@ -23,9 +24,18 @@ def profile(request, username):
         HttpResponse: HTML-страница профиля пользователя с пагинацией.
     """
     user = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(author=user).annotate(
-        comment_count=Count('comments')
-    ).order_by('-pub_date')
+
+    if request.user == user:
+        posts = Post.objects.filter(author=user)
+    else:
+        posts = Post.objects.filter(
+            author=user,
+            is_published=True,
+            pub_date__lte=timezone.now()
+        )
+
+    posts = posts.annotate(comment_count=Count('comments')).order_by('-pub_date')
+
     paginator = Paginator(posts, POSTS_PER_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
