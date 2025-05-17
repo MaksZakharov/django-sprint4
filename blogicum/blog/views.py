@@ -2,7 +2,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -28,9 +27,10 @@ def index(request):
     Возвращает:
         HttpResponse: Список постов с пагинацией.
     """
-    post_list = get_published_posts().annotate(
-        comment_count=Count('comments')
-    ).order_by("-pub_date")
+    post_list = get_published_posts(
+        count_comments=True,
+        order_by_date=True
+    )
     page_obj = paginate_queryset(request, post_list, POSTS_PER_PAGE)
     return render(request, "blog/index.html", {"page_obj": page_obj})
 
