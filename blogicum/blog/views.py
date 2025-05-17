@@ -1,7 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -14,6 +13,7 @@ from django.views.generic.edit import UpdateView
 from blogicum.utils.service import get_published_posts, paginate_queryset
 from .constants import POSTS_PER_PAGE
 from .forms import CommentForm, PostForm
+from .mixins import AuthorRequiredMixin
 from .models import Category, Comment, Post
 
 
@@ -155,31 +155,18 @@ def create_post(request):
     return render(request, "blog/create.html", {"form": form})
 
 
-class PostUpdateView(LoginRequiredMixin, UpdateView):
+class PostUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
 
     model = Post
     form_class = PostForm
     template_name = "blog/create.html"
     pk_url_kwarg = "post_id"
 
-    def dispatch(self, request, *args, **kwargs):
-        post = get_object_or_404(Post, pk=self.kwargs[self.pk_url_kwarg])
-        if not request.user.is_authenticated:
-            return redirect('blog:post_detail', post_id=post.pk)
-        if request.user != post.author:
-            return redirect('blog:post_detail', post_id=post.pk)
-        return super().dispatch(request, *args, **kwargs)
-
     def get_success_url(self):
         return reverse_lazy(
             "blog:post_detail",
             kwargs={"post_id": self.object.pk}
         )
-
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return redirect("blog:post_detail", post_id=self.kwargs["post_id"])
-        raise PermissionDenied
 
 
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
