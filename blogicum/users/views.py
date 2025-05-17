@@ -58,12 +58,10 @@ def edit_profile(request):
     Возвращает:
         HttpResponse: Страница с формой редактирования или редирект на профиль.
     """
-    if request.method == 'POST':
-        form = UserChangeForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('users:profile', username=request.user.username)
-    else:
-        form = UserChangeForm(instance=request.user)
+    form = UserChangeForm(request.POST or None, instance=request.user)
+
+    if form.is_valid():
+        form.save()
+        return redirect('users:profile', username=request.user.username)
 
     return render(request, 'users/edit_profile.html', {'form': form})
