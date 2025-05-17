@@ -235,7 +235,7 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     pk_url_kwarg = "comment_id"
 
     def get_success_url(self):
-        return reverse_lazy(
+        return reverse(
             "blog:post_detail", kwargs={"post_id": self.object.post.id})
 
     def test_func(self):
