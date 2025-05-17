@@ -2,7 +2,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator
 from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,26 +12,10 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DeleteView
 from django.views.generic.edit import UpdateView
 
+from blogicum.utils.service import get_published_posts, paginate_queryset
 from .constants import POSTS_PER_PAGE
 from .forms import CommentForm, PostForm
 from .models import Category, Comment, Post
-
-def get_published_posts():
-    """
-    Возвращает базовый QuerySet опубликованных постов.
-
-    Фильтрует только опубликованные посты с датой публикации
-    не позже текущей и опубликованной категорией.
-
-    Возвращает:
-        QuerySet: Список подходящих постов.
-    """
-    return Post.objects.select_related(
-        "category", "location", "author").filter(
-        is_published=True,
-        pub_date__lte=timezone.now(),
-        category__is_published=True
-    )
 
 
 def index(request):
