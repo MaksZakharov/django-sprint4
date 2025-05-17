@@ -36,7 +36,7 @@ urlpatterns = [
     ),
     path(
         'posts/<int:post_id>/delete_comment/<int:comment_id>/',
-        views.delete_comment,
+        views.CommentDeleteView.as_view(),
         name='delete_comment'
     ),
 ]

@@ -11,6 +11,7 @@ from django.views.generic import DeleteView
 from django.views.generic.edit import UpdateView
 from django.views.decorators.csrf import requires_csrf_token
 from django.db.models import Count
+from django.http import Http404
 
 from .constants import POSTS_PER_PAGE
 from .forms import CommentForm, PostForm
@@ -65,7 +66,19 @@ def post_detail(request, post_id):
     Возвращает:
         HttpResponse: Страница поста с комментариями и формой.
     """
-    post = get_object_or_404(get_published_posts(), id=post_id)
+    post = get_object_or_404(
+        Post.objects.select_related("category", "location", "author"),
+        id=post_id
+    )
+
+    if (
+        not post.is_published
+        or post.pub_date > timezone.now()
+        or not post.category.is_published
+    ):
+        if request.user != post.author:
+            raise Http404()
+
     form = CommentForm()
     comments = post.comments.all()
     return render(
@@ -162,28 +175,37 @@ def create_post(request):
     return render(request, "blog/create.html", {"form": form})
 
 
-class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class PostUpdateView(UpdateView):
 
     model = Post
     form_class = PostForm
     template_name = "blog/create.html"
     pk_url_kwarg = "post_id"
 
-    def get_success_url(self):
+    def dispatch(self, request, *args, **kwargs):
+        post = get_object_or_404(Post, pk=self.kwargs[self.pk_url_kwarg])
+        if not request.user.is_authenticated:
+            return redirect('blog:post_detail', post_id=post.pk)
+        if request.user != post.author:
+            return redirect('blog:post_detail', post_id=post.pk)
+        return super().dispatch(request, *args, **kwargs)
 
+    def get_success_url(self):
         return reverse_lazy(
             "blog:post_detail",
             kwargs={"post_id": self.object.pk}
         )
 
-    def test_func(self):
-
-        return self.request.user == self.get_object().author
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect("blog:post_detail", post_id=self.kwargs["post_id"])
+        raise PermissionDenied
 
 
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     model = Post
+    pk_url_kwarg = 'post_id'
     template_name = "blog/create.html"
     success_url = reverse_lazy("blog:index")
 
@@ -220,41 +242,39 @@ class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Comment
     form_class = CommentForm
     template_name = "blog/comment.html"
+    pk_url_kwarg = "comment_id"
 
     def get_success_url(self):
-
         return reverse_lazy(
             "blog:post_detail",
             kwargs={"post_id": self.object.post.id}
         )
 
     def test_func(self):
-
         return self.request.user == self.get_object().author
 
+    def handle_no_permission(self):
+        raise Http404()
 
-@login_required
-def delete_comment(request, post_id, comment_id):
-    """
-    Удаление комментария (только автор).
 
-    Аргументы:
-        request (HttpRequest): Текущий запрос.
-        post_id (int): ID поста.
-        comment_id (int): ID комментария.
+class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
-    Возвращает:
-        HttpResponse: Подтверждение удаления или редирект.
-    """
-    comment = get_object_or_404(Comment, id=comment_id, post__id=post_id)
-    if request.user != comment.author:
-        raise PermissionDenied
+    model = Comment
+    template_name = "blog/comment.html"
+    pk_url_kwarg = "comment_id"
+    http_method_names = ['get', 'post']
 
-    if request.method == "POST":
-        comment.delete()
-        return redirect("blog:post_detail", post_id=post_id)
+    def get_success_url(self):
+        return reverse_lazy(
+            "blog:post_detail", kwargs={"post_id": self.object.post.id})
 
-    return render(request, "blog/comment.html", {
-        "comment": comment,
-        "post": comment.post,
-    })
+    def test_func(self):
+        return self.request.user == self.get_object().author
+
+    def handle_no_permission(self):
+        raise Http404()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comment"] = self.get_object()
+        return context
