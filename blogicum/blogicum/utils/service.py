@@ -22,17 +22,27 @@ def paginate_queryset(request, queryset, per_page):
     return paginator.get_page(page_number)
 
 
-def get_published_posts(count_comments=False, order_by_date=False):
+def get_published_posts(
+    count_comments=False,
+    order_by_date=False,
+    base_queryset=None,
+):
     """
     Возвращает QuerySet опубликованных постов.
 
     Аргументы:
-        count_comments (bool): Добавить аннотацию с количеством комментариев.
-        order_by_date (bool): Сортировать по дате публикации (по убыванию).
+        count_comments (bool): Добавлять аннотацию с количеством комментариев.
+        order_by_date (bool): Сортировать ли по убыванию даты публикации.
+        base_queryset (QuerySet): Начальный QuerySet.
+
+    Возвращает:
+        QuerySet: Посты, опубликованные, с категорией и без отложек.
     """
-    queryset = Post.objects.select_related(
+    queryset = base_queryset or Post.objects.select_related(
         "category", "location", "author"
-    ).filter(
+    )
+
+    queryset = queryset.filter(
         is_published=True,
         pub_date__lte=timezone.now(),
         category__is_published=True
