@@ -88,10 +88,16 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True
     )
-    post_list = (
-        get_published_posts()
-        .filter(category=category).
-        order_by("-pub_date")
+    base_queryset = category.posts.select_related(
+        "category",
+        "location",
+        "author"
+    )
+
+    post_list = get_published_posts(
+        count_comments=True,
+        order_by_date=True,
+        base_queryset=base_queryset
     )
     page_obj = paginate_queryset(request, post_list, POSTS_PER_PAGE)
     return render(
