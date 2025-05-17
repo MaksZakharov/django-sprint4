@@ -233,7 +233,6 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Comment
     template_name = "blog/comment.html"
     pk_url_kwarg = "comment_id"
-    http_method_names = ['get', 'post']
 
     def get_success_url(self):
         return reverse_lazy(
