@@ -145,15 +145,13 @@ def create_post(request):
     Возвращает:
         HttpResponse: Страница с формой создания поста или редирект.
     """
-    if request.method == "POST":
-        form = PostForm(request.POST, request.FILES)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.save()
-            return redirect("users:profile", username=request.user.username)
-    else:
-        form = PostForm()
+    form = PostForm(request.POST or None, request.FILES or None)
+
+    if form.is_valid():
+        post = form.save(commit=False)
+        post.author = request.user
+        post.save()
+        return redirect("users:profile", username=request.user.username)
     return render(request, "blog/create.html", {"form": form})
 
 
