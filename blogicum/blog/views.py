@@ -243,8 +243,3 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def handle_no_permission(self):
         return redirect("blog:post_detail", post_id=self.get_object().post.id)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["comment"] = self.get_object()
-        return context
