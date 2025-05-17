@@ -46,7 +46,7 @@ def index(request):
         HttpResponse: Список постов с пагинацией.
     """
     post_list = get_published_posts().annotate(
-    comment_count=Count('comments')
+        comment_count=Count('comments')
     ).order_by("-pub_date")
     paginator = Paginator(post_list, POSTS_PER_PAGE)
     page_number = request.GET.get("page")
@@ -113,6 +113,7 @@ def category_posts(request, category_slug):
 @requires_csrf_token
 def csrf_failure(request, reason=""):
     return render(request, "pages/403csrf.html", status=403)
+
 
 def registration(request):
     """
