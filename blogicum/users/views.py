@@ -1,14 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserChangeForm
-from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.db.models import Count
 from django.utils import timezone
 
 from blog.constants import POSTS_PER_PAGE
 from blog.models import Post
-from .service import paginate_queryset
+from blogicum.utils.service import paginate_queryset
 
 User = get_user_model()
 
@@ -35,8 +34,11 @@ def profile(request, username):
             pub_date__lte=timezone.now()
         )
 
-    posts = posts.annotate(comment_count=Count('comments')).order_by('-pub_date')
-
+    posts = (
+        posts.
+        annotate(comment_count=Count('comments'))
+        .order_by('-pub_date')
+    )
     page_obj = paginate_queryset(request, posts, POSTS_PER_PAGE)
 
     return render(request, 'users/profile.html', {

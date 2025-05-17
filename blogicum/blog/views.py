@@ -2,7 +2,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -16,6 +15,7 @@ from django.http import Http404
 from .constants import POSTS_PER_PAGE
 from .forms import CommentForm, PostForm
 from .models import Category, Comment, Post
+from blogicum.utils.service import paginate_queryset
 
 
 def get_published_posts():
@@ -49,9 +49,7 @@ def index(request):
     post_list = get_published_posts().annotate(
         comment_count=Count('comments')
     ).order_by("-pub_date")
-    paginator = Paginator(post_list, POSTS_PER_PAGE)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginate_queryset(request, post_list, POSTS_PER_PAGE)
     return render(request, "blog/index.html", {"page_obj": page_obj})
 
 
@@ -113,9 +111,7 @@ def category_posts(request, category_slug):
         .filter(category=category).
         order_by("-pub_date")
     )
-    paginator = Paginator(post_list, POSTS_PER_PAGE)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginate_queryset(request, post_list, POSTS_PER_PAGE)
     return render(
         request,
         "blog/category.html",
