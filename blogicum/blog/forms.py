@@ -6,7 +6,7 @@ from .models import Comment, Post
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ('title', 'text', 'image', 'category', 'location', 'pub_date')
+        exclude = ('author', 'created_at')
 
 
 class CommentForm(forms.ModelForm):
