@@ -2,6 +2,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from .constants import STR_PREVIEW_LENGTH, TITLE_PREVIEW_LENGTH
+
 User = get_user_model()
 
 
@@ -28,7 +30,7 @@ class Location(PublishedModel):
         verbose_name_plural = 'Местоположения'
 
     def __str__(self):
-        return self.name[:30]
+        return self.name[:STR_PREVIEW_LENGTH]
 
 
 class Category(PublishedModel):
@@ -48,7 +50,7 @@ class Category(PublishedModel):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.title[:30]
+        return self.title[:TITLE_PREVIEW_LENGTH]
 
 
 class Post(PublishedModel):
