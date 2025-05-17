@@ -242,7 +242,7 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.request.user == self.get_object().author
 
     def handle_no_permission(self):
-        raise Http404()
+        return redirect("blog:post_detail", post_id=self.get_object().post.id)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
