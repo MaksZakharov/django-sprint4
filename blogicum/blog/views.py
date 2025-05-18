@@ -12,8 +12,8 @@ from django.views.generic.edit import UpdateView
 
 from blog.constants import POSTS_PER_PAGE
 from blog.forms import CommentForm, PostForm
-from blog.mixins import CommentAccessMixin, AuthorRequiredMixin
-from blog.models import Category, Post
+from blog.mixins import AuthorRequiredMixin
+from blog.models import Category, Comment, Post
 from blog.service import get_published_posts, paginate_queryset
 
 
@@ -204,16 +204,53 @@ def add_comment(request, post_id):
 class CommentUpdateView(
     LoginRequiredMixin,
     UserPassesTestMixin,
-    CommentAccessMixin,
-    UpdateView
+    UpdateView,
 ):
+    model = Comment
     form_class = CommentForm
+    pk_url_kwarg = "comment_id"
+    template_name = "blog/comment.html"
+
+    def get_success_url(self):
+        return reverse(
+            "blog:post_detail",
+            kwargs={"post_id": self.object.post.id}
+        )
+
+    def test_func(self):
+        return self.request.user == self.get_object().author
+
+    def handle_no_permission(self):
+        return redirect("blog:post_detail", post_id=self.get_object().post.id)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comment"] = self.get_object()
+        return context
 
 
 class CommentDeleteView(
     LoginRequiredMixin,
     UserPassesTestMixin,
-    CommentAccessMixin,
-    UpdateView
+    DeleteView,
 ):
-    pass
+    model = Comment
+    pk_url_kwarg = "comment_id"
+    template_name = "blog/comment.html"
+
+    def get_success_url(self):
+        return reverse(
+            "blog:post_detail",
+            kwargs={"post_id": self.object.post.id}
+        )
+
+    def test_func(self):
+        return self.request.user == self.get_object().author
+
+    def handle_no_permission(self):
+        return redirect("blog:post_detail", post_id=self.get_object().post.id)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comment"] = self.get_object()
+        return context
