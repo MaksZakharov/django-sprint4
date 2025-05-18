@@ -23,8 +23,8 @@ def paginate_queryset(request, queryset, per_page):
 
 
 def get_published_posts(
-    count_comments=False,
-    order_by_date=False,
+    count_comments=True,
+    order_by_date=True,
     base_queryset=None,
     filter_published=True,
 ):

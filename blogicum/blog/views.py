@@ -27,10 +27,7 @@ def index(request):
     Возвращает:
         HttpResponse: Список постов с пагинацией.
     """
-    post_list = get_published_posts(
-        count_comments=True,
-        order_by_date=True
-    )
+    post_list = get_published_posts()
     page_obj = paginate_queryset(request, post_list, POSTS_PER_PAGE)
     return render(request, "blog/index.html", {"page_obj": page_obj})
 
