@@ -26,6 +26,7 @@ def get_published_posts(
     count_comments=False,
     order_by_date=False,
     base_queryset=None,
+    filter_published=True,
 ):
     """
     Возвращает QuerySet опубликованных постов.
@@ -38,15 +39,20 @@ def get_published_posts(
     Возвращает:
         QuerySet: Посты, опубликованные, с категорией и без отложек.
     """
-    queryset = base_queryset or Post.objects.select_related(
-        "category", "location", "author"
+    queryset = base_queryset or Post.objects.all()
+
+    queryset = queryset.select_related(
+        "category",
+        "location",
+        "author"
     )
 
-    queryset = queryset.filter(
-        is_published=True,
-        pub_date__lte=timezone.now(),
-        category__is_published=True
-    )
+    if filter_published:
+        queryset = queryset.filter(
+            is_published=True,
+            pub_date__lte=timezone.now(),
+            category__is_published=True
+        )
 
     if count_comments:
         queryset = queryset.annotate(comment_count=Count("comments"))
