@@ -12,8 +12,8 @@ from django.views.generic.edit import UpdateView
 
 from blog.constants import POSTS_PER_PAGE
 from blog.forms import CommentForm, PostForm
-from blog.mixins import AuthorRequiredMixin
-from blog.models import Category, Comment, Post
+from blog.mixins import CommentAccessMixin, AuthorRequiredMixin
+from blog.models import Category, Post
 from blogicum.blog.service import get_published_posts, paginate_queryset
 
 
@@ -201,38 +201,19 @@ def add_comment(request, post_id):
     return redirect("blog:post_detail", post_id=post_id)
 
 
-class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-
-    model = Comment
+class CommentUpdateView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    CommentAccessMixin,
+    UpdateView
+):
     form_class = CommentForm
-    template_name = "blog/comment.html"
-    pk_url_kwarg = "comment_id"
-
-    def get_success_url(self):
-        return reverse(
-            "blog:post_detail",
-            kwargs={"post_id": self.object.post.id}
-        )
-
-    def test_func(self):
-        return self.request.user == self.get_object().author
-
-    def handle_no_permission(self):
-        return redirect("blog:post_detail", post_id=self.get_object().post.id)
 
 
-class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-
-    model = Comment
-    template_name = "blog/comment.html"
-    pk_url_kwarg = "comment_id"
-
-    def get_success_url(self):
-        return reverse(
-            "blog:post_detail", kwargs={"post_id": self.object.post.id})
-
-    def test_func(self):
-        return self.request.user == self.get_object().author
-
-    def handle_no_permission(self):
-        return redirect("blog:post_detail", post_id=self.get_object().post.id)
+class CommentDeleteView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    CommentAccessMixin,
+    UpdateView
+):
+    pass
