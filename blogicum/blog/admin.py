@@ -24,7 +24,7 @@ class LocationAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('author', 'text', 'post', 'created_at', 'is_published')
-    list_filter = ('is_published', 'created_at', 'author')
+    list_display = ('author', 'text', 'post', 'created_at')
+    list_filter = ('created_at', 'author')
     search_fields = ('text', 'author__username', 'post__title')
     ordering = ('-created_at',)

@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from blog.constants import POSTS_PER_PAGE
 from blog.models import Post
-from blogicum.utils.service import paginate_queryset
+from blogicum.blog.service import paginate_queryset
 
 User = get_user_model()
 

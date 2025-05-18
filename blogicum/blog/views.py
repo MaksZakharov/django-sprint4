@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DeleteView
 from django.views.generic.edit import UpdateView
 
-from blogicum.utils.service import get_published_posts, paginate_queryset
+from blogicum.blog.service import get_published_posts, paginate_queryset
 from .constants import POSTS_PER_PAGE
 from .forms import CommentForm, PostForm
 from .mixins import AuthorRequiredMixin
