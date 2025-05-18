@@ -10,11 +10,11 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DeleteView
 from django.views.generic.edit import UpdateView
 
+from blog.constants import POSTS_PER_PAGE
+from blog.forms import CommentForm, PostForm
+from blog.mixins import AuthorRequiredMixin
+from blog.models import Category, Comment, Post
 from blogicum.blog.service import get_published_posts, paginate_queryset
-from .constants import POSTS_PER_PAGE
-from .forms import CommentForm, PostForm
-from .mixins import AuthorRequiredMixin
-from .models import Category, Comment, Post
 
 
 def index(request):
