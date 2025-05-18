@@ -2,10 +2,11 @@ from django.core.paginator import Paginator
 from django.db.models import Count
 from django.utils import timezone
 
+from blog.constants import POSTS_PER_PAGE
 from blog.models import Post
 
 
-def paginate_queryset(request, queryset, per_page):
+def paginate_queryset(request, queryset, per_page=POSTS_PER_PAGE):
     """
     Возвращает объект страницы для пагинируемого запроса.
 

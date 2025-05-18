@@ -28,7 +28,7 @@ def index(request):
         HttpResponse: Список постов с пагинацией.
     """
     post_list = get_published_posts()
-    page_obj = paginate_queryset(request, post_list, POSTS_PER_PAGE)
+    page_obj = paginate_queryset(request, post_list)
     return render(request, "blog/index.html", {"page_obj": page_obj})
 
 
@@ -85,11 +85,7 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True
     )
-    base_queryset = category.posts.select_related(
-        "category",
-        "location",
-        "author"
-    )
+    base_queryset = category.posts.all()
 
     post_list = get_published_posts(
         count_comments=True,
