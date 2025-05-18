@@ -14,7 +14,7 @@ from blog.constants import POSTS_PER_PAGE
 from blog.forms import CommentForm, PostForm
 from blog.mixins import CommentAccessMixin, AuthorRequiredMixin
 from blog.models import Category, Post
-from blogicum.blog.service import get_published_posts, paginate_queryset
+from blog.service import get_published_posts, paginate_queryset
 
 
 def index(request):

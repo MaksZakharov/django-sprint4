@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserChangeForm
 from django.shortcuts import get_object_or_404, redirect, render
 
-from blogicum.blog.service import get_published_posts, paginate_queryset
+from blog.service import get_published_posts, paginate_queryset
 
 User = get_user_model()
 
