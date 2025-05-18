@@ -1,13 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserChangeForm
-from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 
-from blog.constants import POSTS_PER_PAGE
-from blog.models import Post
-from blogicum.blog.service import paginate_queryset
+from blogicum.blog.service import get_published_posts, paginate_queryset
 
 User = get_user_model()
 
@@ -25,21 +21,14 @@ def profile(request, username):
     """
     user = get_object_or_404(User, username=username)
 
-    if request.user == user:
-        posts = Post.objects.filter(author=user)
-    else:
-        posts = Post.objects.filter(
-            author=user,
-            is_published=True,
-            pub_date__lte=timezone.now()
-        )
+    base_queryset = user.posts.all()
 
-    posts = (
-        posts.
-        annotate(comment_count=Count('comments'))
-        .order_by('-pub_date')
+    post_list = get_published_posts(
+        base_queryset=base_queryset,
+        filter_published=request.user != user
     )
-    page_obj = paginate_queryset(request, posts, POSTS_PER_PAGE)
+
+    page_obj = paginate_queryset(request, post_list)
 
     return render(request, 'users/profile.html', {
         'profile_user': user,
