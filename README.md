@@ -82,8 +82,6 @@ python blogicum/manage.py runserver
 python blogicum/manage.py loaddata db.json
 ```
 
----
-
 ## Тестирование
 
 ```bash
